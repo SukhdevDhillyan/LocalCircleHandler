@@ -291,9 +291,7 @@ INDEX = """<!DOCTYPE html>
     <input id="version" type="number" min="1" max="9999" value="1">
   </label>
 
-  <label>Cover
-    <select id="cover"></select>
-  </label>
+  <p class="note">The first sticker in the folder is the pack thumbnail.</p>
 
   <label class="replace" id="replace-row" hidden>
     <input id="replace" type="checkbox"> Replace the pack already on dev
@@ -316,7 +314,6 @@ function formBody() {
     audience: $("audience").value,
     order: $("order").value,
     version: $("version").value,
-    cover: $("cover").value,
     replace: $("replace").checked,
     profile: "vinit"
   };
@@ -367,19 +364,7 @@ $("check").onclick = async () => {
     }
     if (data.folder.order !== null && $("order").value === "100") $("order").value = data.folder.order;
     $("version").value = data.suggested_version;
-    const cover = $("cover");
-    cover.innerHTML = "";
-    const auto = document.createElement("option");
-    auto.value = "auto";
-    auto.textContent = data.cover_file ? "Use " + data.cover_file : "First sticker";
-    cover.appendChild(auto);
-    for (const sticker of data.stickers) {
-      const option = document.createElement("option");
-      option.value = sticker.file;
-      option.textContent = sticker.file;
-      cover.appendChild(option);
-    }
-    const lines = [data.stickers.length + " stickers:"];
+    const lines = [data.stickers.length + " stickers. The first one is the thumbnail."];
     for (const sticker of data.stickers) lines.push(sticker.file + "  —  " + sticker.label);
     if (data.ignored.length) lines.push("", "Not uploaded:", ...data.ignored);
     if (data.audience_lock) lines.push("", "This pack id is fixed as " + data.audience_lock + " in the app.");

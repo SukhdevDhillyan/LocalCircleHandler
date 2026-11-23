@@ -92,14 +92,13 @@ class PackTests(unittest.TestCase):
                 keys,
                 {
                     "packs/chai/chai.webp",
-                    "packs/chai/cover.webp",
                     "packs/chai/manifest.json",
                     "packs/chai/pack.zip",
                 },
             )
             zipped = next(item.data for item in objects if item.key.endswith("pack.zip"))
             with zipfile.ZipFile(BytesIO(zipped)) as archive:
-                self.assertEqual(sorted(archive.namelist()), ["chai.webp", "cover.webp"])
+                self.assertEqual(sorted(archive.namelist()), ["chai.webp"])
             stored = json.loads(next(item.data for item in objects if item.key.endswith("manifest.json")))
             self.assertEqual(stored["audience"], "both")
             self.assertEqual(stored["name"], "Chai")

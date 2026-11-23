@@ -1,7 +1,7 @@
 """Build a sticker pack the chat API can read from a folder of images.
 
 The chat service lists ``packs/{pack_id}/`` on the sticker bucket. A pack is
-webp or png files, an optional cover, and a manifest. No app release is involved.
+webp or png files and a manifest. The first sticker is the pack thumbnail.
 """
 
 from __future__ import annotations
@@ -235,25 +235,9 @@ def build_manifest(
 
 
 def cover_choice(scan: FolderScan, requested: str | None) -> str | None:
-    """A cover file name to upload, or None when the first sticker is the cover."""
-    choice = (requested or "").strip()
-    names = {item.file for item in scan.stickers}
-    if scan.cover_file:
-        names.add(scan.cover_file)
-    if choice in {"", "auto"}:
-        return scan.cover_file
-    if choice not in names:
-        raise PackError("Choose a cover from the files in this folder.")
-    if choice.lower() in {"cover.webp", "cover.png"}:
-        return choice
-    return choice
-
-
-def _cover_upload_name(source_name: str) -> str:
-    if source_name.lower() in {"cover.webp", "cover.png"}:
-        return source_name
-    extension = ".png" if source_name.lower().endswith(".png") else ".webp"
-    return f"cover{extension}"
+    """The pack thumbnail is the first sticker. A separate cover is not uploaded."""
+    del scan, requested
+    return None
 
 
 def build_objects(
@@ -263,6 +247,7 @@ def build_objects(
     manifest: dict,
     cover: str | None,
 ) -> list[UploadObject]:
+    del cover
     prefix = f"packs/{pack_id}"
     objects: list[UploadObject] = []
     zip_files: list[tuple[str, bytes]] = []
@@ -270,15 +255,6 @@ def build_objects(
         data = (scan.folder / sticker.file).read_bytes()
         objects.append(UploadObject(f"{prefix}/{sticker.file}", content_type(sticker.file), data))
         zip_files.append((sticker.file, data))
-    if cover:
-        source = (scan.folder / cover).read_bytes()
-        cover_name = _cover_upload_name(cover)
-        if cover_name != cover:
-            objects.append(UploadObject(f"{prefix}/{cover_name}", content_type(cover_name), source))
-        elif not any(item.key.endswith("/" + cover_name) for item in objects):
-            objects.append(UploadObject(f"{prefix}/{cover_name}", content_type(cover_name), source))
-        if not any(name == cover_name for name, _ in zip_files):
-            zip_files.append((cover_name, source))
     manifest_bytes = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     objects.append(UploadObject(f"{prefix}/manifest.json", "application/json", manifest_bytes))
     objects.append(UploadObject(f"{prefix}/pack.zip", "application/zip", _zip_bytes(zip_files)))
