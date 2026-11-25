@@ -22,7 +22,9 @@ class StickerBucket:
             raise PackError(f"AWS profile {self.profile} is not on this computer.") from exc
 
     def list_keys(self, pack_id: str) -> list[str]:
-        prefix = f"packs/{pack_id}/"
+        return self.list_prefix(f"packs/{pack_id}/")
+
+    def list_prefix(self, prefix: str) -> list[str]:
         keys: list[str] = []
         token: str | None = None
         while True:
@@ -36,8 +38,11 @@ class StickerBucket:
             token = page.get("NextContinuationToken")
 
     def read_manifest(self, pack_id: str) -> dict | None:
+        return self.read_json(f"packs/{pack_id}/manifest.json")
+
+    def read_json(self, key: str) -> dict | None:
         try:
-            obj = self._call(self.client.get_object, Bucket=self.bucket, Key=f"packs/{pack_id}/manifest.json")
+            obj = self._call(self.client.get_object, Bucket=self.bucket, Key=key)
         except ClientError as exc:
             if _code(exc) in {"NoSuchKey", "404", "NotFound"}:
                 return None
